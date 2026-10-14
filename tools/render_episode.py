@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -174,23 +175,39 @@ def build_scene_audio(scene, n, number, outdir, dry_run=False):
          "-y", combined])
     return combined
 
-def render_fal_talking_scene(image, audio, target, duration):
-    """Optional paid talking-image animation via fal.ai Sync Lipsync v3."""
+def render_sadtalker_space(image, audio, target, duration):
+    """Use a public community SadTalker Space; no paid API key is required."""
     import urllib.request
-    import fal_client
-    target.parent.mkdir(parents=True, exist_ok=True)
-    image_url = fal_client.upload_file(str(image))
-    audio_url = fal_client.upload_file(str(audio))
-    result = fal_client.subscribe(
-        "fal-ai/sync-lipsync/v3/image-to-video",
-        arguments={"image_url": image_url, "audio_url": audio_url},
+    from gradio_client import Client, handle_file
+    space = os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker")
+    api_name = os.getenv("SADTALKER_API_NAME", "/test")
+    client = Client(space, verbose=False)
+    result = client.predict(
+        handle_file(str(image)), handle_file(str(audio)),
+        "crop", True, False, 1, 256, 0, "facevid2vid", 1.0,
+        False, None, "pose", False, max(2, int(duration)), True,
+        api_name=api_name,
     )
-    video_url = (result.get("video") or {}).get("url")
-    if not video_url:
-        raise RuntimeError(f"fal.ai lipsync returned no video URL: {result}")
+    if isinstance(result, (list, tuple)):
+        result = next((v for v in result if isinstance(v, (str, dict)) and v), None)
+    if isinstance(result, dict):
+        video_value = result.get("video") or result.get("path") or result.get("url")
+        if isinstance(video_value, dict):
+            video_value = video_value.get("url") or video_value.get("path")
+    else:
+        video_value = result
+    if not isinstance(video_value, str) or not video_value:
+        raise RuntimeError(f"SadTalker Space returned no video path: {result!r}")
+    target.parent.mkdir(parents=True, exist_ok=True)
     raw = target.with_name(target.stem + ".provider.mp4")
     try:
-        urllib.request.urlretrieve(video_url, raw)
+        if video_value.startswith(("http://", "https://")):
+            urllib.request.urlretrieve(video_value, raw)
+        else:
+            source = Path(video_value)
+            if not source.is_file():
+                raise RuntimeError(f"SadTalker returned an inaccessible video path: {video_value}")
+            shutil.copy2(source, raw)
         vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p,tpad=stop_mode=clone:stop_duration={max(0.0, duration):.3f}"
         run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", raw, "-i", audio,
              "-map", "0:v:0", "-map", "1:a:0", "-vf", vf, "-af", "apad",
@@ -201,7 +218,7 @@ def render_fal_talking_scene(image, audio, target, duration):
     finally:
         if raw.exists():
             raw.unlink()
-    print(f"  scene {target.stem}: lip-synced with fal.ai")
+    print(f"  scene {target.stem}: lip-synced with free community Space {space}")
     return target
 
 def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
@@ -214,12 +231,12 @@ def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
     target = outdir / "scenes" / f"scene_{number:03d}.mp4"
     target.parent.mkdir(parents=True, exist_ok=True)
     if dry_run:
-        provider = "fal.ai lip-sync" if audio and os.getenv("FAL_KEY") else "FFmpeg pan/zoom"
+        provider = "SadTalker community Space" if audio and os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker") else "FFmpeg pan/zoom"
         print(f"  scene {number}: image={image.name}; audio={audio.name if audio else 'silent'}; duration={duration:.1f}s; motion={provider}")
         return target
-    if audio and os.getenv("FAL_KEY"):
+    if audio and os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker"):
         try:
-            return render_fal_talking_scene(image, audio, target, duration)
+            return render_sadtalker_space(image, audio, target, duration)
         except Exception as exc:
             if os.getenv("REQUIRE_LIPSYNC", "").strip().lower() in ("1", "true", "yes"):
                 raise
