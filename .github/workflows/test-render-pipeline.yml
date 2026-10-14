@@ -26,3 +26,22 @@ jobs:
         run: python -m py_compile tools/render_episode.py tools/validate_episode.py tests/test_render_episode.py
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+      - name: Smoke-test MP4 rendering without paid APIs
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+          episode = Path('episodes/episode_070.json')
+          image = Path('assets/episodes/episode_070/scene_001.ppm')
+          image.parent.mkdir(parents=True, exist_ok=True)
+          # 9:16 solid-color PPM; the renderer only needs a valid still frame.
+          w, h = 90, 160
+          image.write_text(f'P3\\n{w} {h}\\n255\\n' + ('40 70 120\\n' * (w*h)), encoding='ascii')
+          episode.write_text(json.dumps({'episode_number':70,'title':'CI render smoke test','scenes':[{'scene_number':1,'duration_seconds':2,'dialogue':[]}]}), encoding='utf-8')
+          subprocess.run(['python','tools/render_episode.py','--episode','70'], check=True)
+          mp4 = Path('generated/episode_070/episode_070.mp4')
+          assert mp4.is_file() and mp4.stat().st_size > 1000, 'MP4 output missing or too small'
+          subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(mp4)], check=True)
+          print('MP4 render smoke test passed:', mp4.stat().st_size, 'bytes')
+          PY
