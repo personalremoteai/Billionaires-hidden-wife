@@ -6,8 +6,8 @@ This repository is the **rendering and assembly stage**. Write and approve scrip
 
 1. **Input:** approved episode JSON and one image per scene.
 2. **Voice:** dialogue lines are turned into speech using Edge TTS. You can override speaker voices with the GitHub repository variable `VOICE_MAP_JSON` (JSON object mapping exact speaker names to Edge voice names).
-3. **Motion:** when no paid lip-sync key is configured, FFmpeg adds a slow cinematic pan/zoom to each scene image.
-4. **Optional talking-face motion:** if repository secret `FAL_KEY` is configured, dialogue scenes use fal.ai Sync Lipsync v3 image-to-video to animate the still to the generated dialogue audio. This is a paid external inference service; check its pricing before enabling. Without the secret, no external lip-sync calls are made.
+3. **Talking-face motion:** dialogue scenes are sent to the public community [SadTalker Hugging Face Space](https://huggingface.co/spaces/kevinwang676/SadTalker) through Gradio. No `FAL_KEY` or paid API key is needed. Community compute can queue, sleep, change its API, or become unavailable; if it fails, the renderer falls back to FFmpeg pan/zoom unless `REQUIRE_LIPSYNC=1`.
+4. **Motion fallback:** FFmpeg adds a slow cinematic pan/zoom to each scene image if the public Space fails or is disabled.
 5. **Assembly:** scenes are rendered at 1080×1920, 30 fps and joined into a vertical MP4.
 6. **Export:** GitHub Actions uploads the MP4s and generated voiceovers as a downloadable artifact (available for 7 days). Large video files are not committed to Git.
 
@@ -43,7 +43,7 @@ The dry run checks the JSON and image paths without synthesizing audio or render
 
 ## Important limitations
 
-- The default pan/zoom path animates the camera, not the character's mouth. For actual talking-face/lip-sync, configure `FAL_KEY`; that makes paid external requests for dialogue scenes.
+- SadTalker is open-source, but this workflow calls a shared community-hosted Space, not a private GPU. It is free to try, but not guaranteed unlimited or always online. The `kevinwang676/SadTalker` Space may change or become unavailable; set repository variable `SADTALKER_SPACE` or `SADTALKER_API_NAME` if you use another compatible Space.
 - Edge TTS is an online voice service, not an unlimited guaranteed free tier. Run a single test episode first.
 - This pipeline renders existing images and scripts. It does not generate story scripts or scene images.
 - Upload only images and audio you have the rights to use. Never commit API keys or secrets.
