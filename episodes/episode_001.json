@@ -1,30 +1,224 @@
 {
   "episode_number": 1,
-  "title": "The Return",
-  "status": "outline",
+  "title": "The Return — A Chance Encounter",
+  "status": "script_approved_for_test",
   "target_duration_seconds": 90,
   "aspect_ratio": "9:16",
-  "logline": "Isabella returns to the world of Alexander Sterling with a secret that could change his family forever.",
-  "continuity_before": [],
+  "logline": "Isabella Hart crosses paths with billionaire Alexander Sterling on a rainy night. An unexpected act of kindness reopens a door neither is ready to face.",
+  "continuity_before": [
+    "Isabella and Alexander share a hidden history; neither is ready to reveal it publicly."
+  ],
   "scenes": [
     {
       "scene_number": 1,
-      "duration_seconds": 15,
-      "location": "TBD",
+      "duration_seconds": 10,
+      "location": "Upscale city café, evening",
       "characters": [
         "Isabella Hart"
       ],
-      "action": "TBD",
-      "dialogue": [],
-      "image_prompt_file": "../../prompts/scene_image_prompt.md",
-      "motion_prompt_file": "../../prompts/image_to_video_prompt.md",
-      "voiceover_files": [],
-      "sound_cues": [],
-      "status": "needs_script"
+      "action": "Isabella finishes a late shift, wiping a table as rain streaks the café windows. She looks exhausted but determined.",
+      "dialogue": [
+        {
+          "speaker": "Isabella Hart",
+          "line": "One more shift. Then I can finally breathe.",
+          "emotion": "tired, quietly determined"
+        }
+      ],
+      "narration": "Some people learn to hide their pain behind a smile. Isabella had become an expert.",
+      "cinematic": "Vertical 9:16. Medium close-up, warm practical café lights against cool rain reflections. Slow push-in; shallow depth of field; natural performance, no on-screen text."
+    },
+    {
+      "scene_number": 2,
+      "duration_seconds": 10,
+      "location": "Outside the café, rainy city street",
+      "characters": [
+        "Alexander Sterling"
+      ],
+      "action": "A black luxury sedan pulls to the curb. Alexander steps out, speaking into his phone, distracted by urgent business.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "Move the meeting to tomorrow. I said tomorrow.",
+          "emotion": "controlled, distracted"
+        }
+      ],
+      "narration": "Across the street, a man accustomed to controlling every outcome was about to lose control of one small moment.",
+      "cinematic": "Low tracking shot beside the sedan, wet pavement reflecting amber and blue city lights. Tilt up to Alexander; rain visible in backlight; restrained slow motion."
+    },
+    {
+      "scene_number": 3,
+      "duration_seconds": 10,
+      "location": "Café entrance",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "Alexander turns through the doorway just as Isabella carries a tray. They collide; a cup spills. They look up and recognize something familiar in each other.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "I'm so sorry. Are you hurt?",
+          "emotion": "genuinely concerned"
+        },
+        {
+          "speaker": "Isabella Hart",
+          "line": "I'm fine. Please, just watch where you're going.",
+          "emotion": "guarded, startled"
+        }
+      ],
+      "narration": "For one suspended second, the noise of the city disappeared.",
+      "cinematic": "Handheld medium shot at the collision, then close-ups of each face. Brief slow motion on the falling cup; no exaggerated impact."
+    },
+    {
+      "scene_number": 4,
+      "duration_seconds": 10,
+      "location": "Café interior",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "Alexander kneels to help gather the broken cup pieces while Isabella tries to keep her composure.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "Let me help you clean this up.",
+          "emotion": "soft, apologetic"
+        },
+        {
+          "speaker": "Isabella Hart",
+          "line": "You don't have to fix everything.",
+          "emotion": "quietly defensive"
+        }
+      ],
+      "narration": "His apology was simple. The history between them was not.",
+      "cinematic": "Two-shot at table height, warm highlights on hands and faces. Slow lateral camera drift; focus pull from broken porcelain to their eyes."
+    },
+    {
+      "scene_number": 5,
+      "duration_seconds": 10,
+      "location": "Outside café, beside sedan",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "Rain eases. Alexander offers Isabella a ride. She hesitates, then accepts after noticing his sincere concern.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "It's late. Let me take you home.",
+          "emotion": "earnest, restrained"
+        },
+        {
+          "speaker": "Isabella Hart",
+          "line": "I don't want to owe you anything.",
+          "emotion": "wary"
+        }
+      ],
+      "narration": "Trust was the one thing neither of them could afford to give away lightly.",
+      "cinematic": "Medium two-shot under the café awning. Rain bokeh behind them; subtle push-in; let pauses carry the tension."
+    },
+    {
+      "scene_number": 6,
+      "duration_seconds": 10,
+      "location": "Inside luxury sedan, moving through city",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "They sit with careful distance between them. City lights slide over the windows as the silence gradually softens.",
+      "dialogue": [
+        {
+          "speaker": "Isabella Hart",
+          "line": "I'm trying to build a life that belongs to me.",
+          "emotion": "honest, vulnerable"
+        },
+        {
+          "speaker": "Alexander Sterling",
+          "line": "That takes more strength than people realize.",
+          "emotion": "quiet respect"
+        }
+      ],
+      "narration": "For the first time that night, Isabella felt seen instead of judged.",
+      "cinematic": "Intimate two-shot from dashboard, alternating close-ups. Reflections travel across glass; smooth slow camera drift; subdued piano begins."
+    },
+    {
+      "scene_number": 7,
+      "duration_seconds": 10,
+      "location": "Elegant charity reception",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "At a formal event, Isabella enters in a simple elegant dress. Whispers begin among the guests; Alexander notices her discomfort and moves closer.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "Tell me what's going on. I'm here.",
+          "emotion": "protective, calm"
+        },
+        {
+          "speaker": "Isabella Hart",
+          "line": "It's just... complicated.",
+          "emotion": "anxious"
+        }
+      ],
+      "narration": "Secrets have a way of finding the light, especially in a room full of people watching.",
+      "cinematic": "Gliding establishing shot across warm chandeliers, then close-up on Isabella as the crowd blurs. Controlled dolly-in; dramatic but realistic lighting."
+    },
+    {
+      "scene_number": 8,
+      "duration_seconds": 10,
+      "location": "Quiet balcony outside reception",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "Away from the guests, Isabella admits she is afraid of being hurt again. Alexander listens without interrupting.",
+      "dialogue": [
+        {
+          "speaker": "Isabella Hart",
+          "line": "I don't want to be a burden to you.",
+          "emotion": "near tears, honest"
+        },
+        {
+          "speaker": "Alexander Sterling",
+          "line": "You're not a burden. You deserve the truth.",
+          "emotion": "gentle, sincere"
+        }
+      ],
+      "narration": "Sometimes the bravest thing is not running from the person who knows where it hurts.",
+      "cinematic": "Tight emotional close-ups, then a gentle two-shot. Warm practical light behind them, cool skyline beyond; slow push-in, hold the silence."
+    },
+    {
+      "scene_number": 9,
+      "duration_seconds": 10,
+      "location": "Rooftop terrace at sunrise",
+      "characters": [
+        "Isabella Hart",
+        "Alexander Sterling"
+      ],
+      "action": "The first light touches the skyline. Alexander offers his hand; Isabella takes it, still uncertain but willing to try.",
+      "dialogue": [
+        {
+          "speaker": "Alexander Sterling",
+          "line": "I can't promise this will be easy. I can promise you won't face it alone.",
+          "emotion": "vulnerable, sincere"
+        },
+        {
+          "speaker": "Isabella Hart",
+          "line": "Then start by telling me the whole truth.",
+          "emotion": "hopeful, firm"
+        }
+      ],
+      "narration": "Their story was far from over. This time, it would begin with the truth.",
+      "cinematic": "Sunrise skyline in gold and rose. Close-up on hands meeting, then faces. Slow pull-back into a vertical wide shot; gentle fade to black."
     }
   ],
-  "cliffhanger": "TBD",
-  "continuity_after": [],
+  "cliffhanger": "Isabella asks Alexander to tell her the whole truth, setting up the hidden history revealed in Episode 2.",
+  "continuity_after": [
+    "The unresolved history between Isabella and Alexander remains central.",
+    "Do not introduce Ava or Ethan; the canon names are Isabella Hart and Alexander Sterling."
+  ],
   "asset_manifest": {
     "approved_reference_images": [],
     "scene_images": [],
