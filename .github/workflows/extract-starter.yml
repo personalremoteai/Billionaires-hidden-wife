@@ -1,0 +1,45 @@
+name: Restore starter project files
+on:
+  push:
+    paths:
+      - '.github/workflows/extract-starter.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract starter workspace
+        run: |
+          python - <<'PY'
+          import shutil, zipfile
+          from pathlib import Path
+          archive = Path('billionaires_hidden_wife_starter.zip')
+          if not archive.exists(): raise SystemExit('Starter ZIP not found at repository root')
+          with zipfile.ZipFile(archive) as z:
+              root = 'billionaires_hidden_wife_starter/'
+              members = [n for n in z.namelist() if n.startswith(root) and not n.endswith('/')]
+              for member in members:
+                  rel = member[len(root):]
+                  if not rel or rel.startswith('../') or rel.startswith('/'):
+                      continue
+                  dest = Path(rel)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(z.read(member))
+                  print('Restored', dest)
+          # Remove the incorrectly added script-writing overlay; the intended input is user-authored scripts.
+          for name in ('README_ENGINE.md','requirements-engine.txt','tests/test_engine.py','tools/production_engine.py','production/series_brief.md','.github/workflows/generate-episodes.yml'):
+              p=Path(name)
+              if p.is_file(): p.unlink(); print('Removed mismatched overlay', name)
+          for d in ('tests','production'):
+              p=Path(d)
+              if p.is_dir() and not any(p.iterdir()): p.rmdir()
+          PY
+      - name: Commit restored project
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then echo 'No changes'; else git commit -m 'Restore original episode production workspace'; git push; fi
