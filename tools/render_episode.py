@@ -1,145 +1,29 @@
-#!/usr/bin/env python3
-"""Render a user-authored episode JSON plus scene images into a vertical MP4.
-
-Images are expected in assets/episodes/episode_NNN/scene_NNN.png (or jpg/jpeg/webp).
-Output: generated/episode_NNN/episode_NNN.mp4 and generated voiceovers.
-"""
-import argparse
-import asyncio
-import json
-import os
-import re
-import shutil
-import subprocess
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.webp')
-DEFAULT_VOICES = {
-    'isabella': 'en-US-JennyNeural',
-    'alexander': 'en-US-GuyNeural',
-    'lily': 'en-US-AnaNeural',
-    'victoria': 'en-US-AriaNeural',
-}
-
-def run(cmd):
-    subprocess.run([str(x) for x in cmd], check=True, cwd=ROOT)
-
-def episode_file(n):
-    return ROOT / 'episodes' / f'episode_{n:03d}.json'
-
-def episode_dir(n):
-    return ROOT / 'generated' / f'episode_{n:03d}'
-
-def image_for(scene, n, number):
-    candidates = []
-    for key in ('image_file', 'image_path', 'scene_image', 'image'):
-        value = scene.get(key)
-        if isinstance(value, str) and value.strip():
-            p = Path(value)
-            candidates += [p if p.is_absolute() else ROOT / p]
-    for base in (ROOT / 'assets' / 'episodes' / f'episode_{n:03d}', ROOT / 'assets' / f'episode_{n:03d}', ROOT / 'generated' / f'episode_{n:03d}' / 'images'):
-        for ext in IMAGE_EXTS:
-            candidates.append(base / f'scene_{number:03d}{ext}')
-            candidates.append(base / f'scene_{number:02d}{ext}')
-    for item in scene.get('images', []) if isinstance(scene.get('images'), list) else []:
-        if isinstance(item, str):
-            p = Path(item); candidates.append(p if p.is_absolute() else ROOT / p)
-    for p in candidates:
-        if p.is_file(): return p.resolve()
-    return None
-
-def dialogue_lines(scene):
-    data = scene.get('dialogue', [])
-    if isinstance(data, str): return [{'speaker': 'Narrator', 'line': data}] if data.strip() else []
-    if not isinstance(data, list): return []
-    out = []
-    for item in data:
-        if isinstance(item, str) and item.strip(): out.append({'speaker': 'Narrator', 'line': item.strip()})
-        elif isinstance(item, dict):
-            line = item.get('line') or item.get('text') or item.get('dialogue') or ''
-            if isinstance(line, str) and line.strip(): out.append({'speaker': str(item.get('speaker') or item.get('character') or 'Narrator'), 'line': line.strip(), 'emotion': item.get('emotion', '')})
-    narration = scene.get('narration')
-    if isinstance(narration, str) and narration.strip(): out.append({'speaker': 'Narrator', 'line': narration.strip()})
-    return out
-
-def validate_episode(data, n):
-    errors = []
-    if not isinstance(data, dict): return ['episode JSON must be an object']
-    for key in ('episode_number', 'scenes'):
-        if key not in data: errors.append(f'missing required field: {key}')
-    if data.get('episode_number') != n: errors.append(f'episode_number must equal {n}')
-    if not isinstance(data.get('scenes'), list) or not data.get('scenes'): errors.append('scenes must be a non-empty list')
-    else:
-        for i, scene in enumerate(data['scenes'], 1):
-            if not isinstance(scene, dict): errors.append(f'scene {i} must be an object'); continue
-            if not any(scene.get(k) for k in ('scene_number',)): scene['scene_number'] = i
-            if not (scene.get('image_file') or scene.get('image_path') or scene.get('scene_image') or scene.get('image') or scene.get('images')):
-                # Conventional filename lookup is allowed; checked separately after validation.
-                pass
-    return errors
-
-def voice_for(speaker):
-    try: custom = json.loads(os.getenv('VOICE_MAP_JSON', '{}'))
-    except json.JSONDecodeError: custom = {}
-    if isinstance(custom, dict):
-        for name, voice in custom.items():
-            if str(name).casefold() == speaker.casefold() and isinstance(voice, str) and voice: return voice
-    low = speaker.casefold()
-    for character, voice in DEFAULT_VOICES.items():
-        if character in low: return voice
-    if any(word in low for word in ('he ', 'man', 'father', 'husband', 'alex')): return 'en-US-GuyNeural'
-    if 'narrat' in low: return 'en-US-AriaNeural'
-    return 'en-US-JennyNeural'
-
-async def make_tts(text, voice, target):
-    import edge_tts
-    communicate = edge_tts.Communicate(text=text, voice=voice)
-    await communicate.save(str(target))
-
-def probe_duration(path):
-    raw = subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', str(path)], text=True).strip()
-    return float(raw)
-
-def build_scene_audio(scene, n, number, outdir, dry_run=False):
-    # Existing per-scene audio takes precedence; the episode JSON can point to voiceover files.
-    values = scene.get('voiceover_files', [])
-    if isinstance(values, str): values = [values]
-    for value in values if isinstance(values, list) else []:
-        if isinstance(value, str):
-            p = Path(value); p = p if p.is_absolute() else ROOT / p
-            if p.is_file(): return p.resolve()
-    explicit = scene.get('audio_file') or scene.get('voiceover_file')
-    if isinstance(explicit, str) and explicit:
-        p = Path(explicit); p = p if p.is_absolute() else ROOT / p
-        if p.is_file(): return p.resolve()
-    lines = dialogue_lines(scene)
-    if not lines: return None
-    audio_dir = outdir / 'voiceovers'; audio_dir.mkdir(parents=True, exist_ok=True)
-    scene_dir = audio_dir / f'scene_{number:03d}'; scene_dir.mkdir(parents=True, exist_ok=True)
-    line_files = []
-    for i, line in enumerate(lines, 1):
-        target = scene_dir / f'line_{i:02d}.mp3'
-        if not target.exists():
-            if dry_run: continue
-            asyncio.run(make_tts(line['line'], voice_for(line['speaker']), target))
-        line_files.append(target)
-    if dry_run: return None
-    if not line_files: return None
-    # Insert a short silent pause between lines, preserving a natural dialogue rhythm.
-    silence = scene_dir / 'pause.mp3'
-    if not silence.exists():
-        run(['ffmpeg','-hide_banner','-loglevel','error','-f','lavfi','-i','anullsrc=r=24000:cl=mono','-t','0.28','-c:a','libmp3lame','-q:a','6','-y',silence])
-    concat_list = scene_dir / 'concat.txt'
-    entries=[]
-    for i, f in enumerate(line_files):
-        entries.append(f"file '{f.as_posix()}'")
-        if i < len(line_files)-1: entries.append(f"file '{silence.as_posix()}'")
-    concat_list.write_text('\n'.join(entries)+'\n', encoding='utf-8')
-    combined = audio_dir / f'scene_{number:03d}.mp3'
-    run(['ffmpeg','-hide_banner','-loglevel','error','-f','concat','-safe','0','-i',concat_list,'-c:a','libmp3lame','-q:a','4','-y',combined])
-    return combined
+def render_fal_talking_scene(image, audio, target, duration):
+    """Optional paid talking-image animation via fal.ai Sync Lipsync v3."""
+    import urllib.request
+    import fal_client
+    target.parent.mkdir(parents=True, exist_ok=True)
+    image_url = fal_client.upload_file(str(image))
+    audio_url = fal_client.upload_file(str(audio))
+    result = fal_client.subscribe(
+        "fal-ai/sync-lipsync/v3/image-to-video",
+        arguments={"image_url": image_url, "audio_url": audio_url},
+    )
+    video_url = (result.get("video") or {}).get("url")
+    if not video_url:
+        raise RuntimeError(f"fal.ai lipsync returned no video URL: {result}")
+    raw = target.with_name(target.stem + ".provider.mp4")
+    try:
+        urllib.request.urlretrieve(video_url, raw)
+        vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p,tpad=stop_mode=clone:stop_duration={max(0.0, duration):.3f}"
+        run(["ffmpeg","-hide_banner","-loglevel","error","-y","-i",raw,"-i",audio,
+             "-map","0:v:0","-map","1:a:0","-vf",vf,"-af","apad","-t",f"{duration:.3f}",
+             "-r","30","-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
+             "-c:a","aac","-b:a","128k","-ar","44100","-ac","2","-movflags","+faststart",target])
+    finally:
+        if raw.exists(): raw.unlink()
+    print(f"  scene {target.stem}: lip-synced with fal.ai")
+    return target
 
 def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
     planned = float(scene.get('duration_seconds') or 8)
@@ -149,8 +33,16 @@ def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
     target = outdir / 'scenes' / f'scene_{number:03d}.mp4'
     target.parent.mkdir(parents=True, exist_ok=True)
     if dry_run:
-        print(f'  scene {number}: image={image.name}; audio={audio.name if audio else "silent"}; duration={duration:.1f}s')
+        provider = "fal.ai lip-sync" if audio and os.getenv("FAL_KEY") else "FFmpeg pan/zoom"
+        print(f'  scene {number}: image={image.name}; audio={audio.name if audio else "silent"}; duration={duration:.1f}s; motion={provider}')
         return target
+    if audio and os.getenv("FAL_KEY"):
+        try:
+            return render_fal_talking_scene(image, audio, target, duration)
+        except Exception as exc:
+            if os.getenv("REQUIRE_LIPSYNC", "").strip().lower() in ("1", "true", "yes"):
+                raise
+            print(f"  WARNING: lip-sync provider failed ({exc}); falling back to FFmpeg pan/zoom.", file=sys.stderr)
     vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.00055,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30,setsar=1,format=yuv420p"
     cmd = ['ffmpeg','-hide_banner','-loglevel','error','-y','-loop','1','-framerate','30','-i',image]
     if audio and audio.exists(): cmd += ['-i', audio]
