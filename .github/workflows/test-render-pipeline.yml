@@ -1,0 +1,28 @@
+name: Test render pipeline
+on:
+  push:
+    paths:
+      - 'tools/render_episode.py'
+      - 'tools/validate_episode.py'
+      - 'tests/**'
+      - 'requirements-video.txt'
+      - '.github/workflows/test-render-pipeline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install dependencies
+        run: python -m pip install -r requirements-video.txt
+      - name: Compile Python files
+        run: python -m py_compile tools/render_episode.py tools/validate_episode.py tests/test_render_episode.py
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
