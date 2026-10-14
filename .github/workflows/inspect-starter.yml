@@ -1,0 +1,27 @@
+name: Inspect starter archive
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-starter.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List starter archive contents
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          for archive in sorted(Path('.').glob('*.zip')):
+              print(f'=== ARCHIVE: {archive.name} ({archive.stat().st_size} bytes) ===')
+              try:
+                  with zipfile.ZipFile(archive) as z:
+                      for item in z.infolist():
+                          print(f'{item.file_size:>8}  {item.filename}')
+              except Exception as e:
+                  print(f'Could not inspect {archive.name}: {e}')
+          PY
