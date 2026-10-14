@@ -27,7 +27,8 @@ jobs:
         run: python -m pip install -r requirements-video.txt
       - name: Render selected episodes
         env:
-          FAL_KEY: ${{ secrets.FAL_KEY }}
+          SADTALKER_SPACE: kevinwang676/SadTalker
+          SADTALKER_API_NAME: /test
           REQUIRE_LIPSYNC: '0'
           VOICE_MAP_JSON: ${{ vars.VOICE_MAP_JSON }}
         run: python tools/render_episode.py --start '${{ inputs.start }}' --count '${{ inputs.count }}'
