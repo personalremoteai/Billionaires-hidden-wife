@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".ppm")
 DEFAULT_VOICES = {
     "isabella": "en-US-JennyNeural",
     "alexander": "en-US-GuyNeural",
