@@ -1,0 +1,53 @@
+name: Inspect starter archive
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-starter.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect ZIP contents and source files
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          candidates = sorted(Path('.').glob('*.zip'))
+          out = ['# Starter archive inspection report', '', 'Generated from ZIP files at repository root.', '']
+          for archive in candidates:
+              out += [f'## Archive: `{archive.name}` ({archive.stat().st_size} bytes)', '']
+              try:
+                  with zipfile.ZipFile(archive) as z:
+                      infos = z.infolist()
+                      out += ['### File inventory', '']
+                      for item in infos:
+                          out.append(f'- `{item.filename}` — {item.file_size} bytes')
+                      out += ['', '### Readable project files', '']
+                      for item in infos:
+                          name = item.filename
+                          suffix = Path(name).suffix.lower()
+                          if suffix not in {'.py','.md','.txt','.yml','.yaml','.json','.toml','.js','.ts','.tsx','.sh','.html','.css'}:
+                              continue
+                          if item.file_size > 12000:
+                              out += [f'#### `{name}` (omitted: {item.file_size} bytes)', '']
+                              continue
+                          try:
+                              body = z.read(item).decode('utf-8')
+                          except Exception:
+                              continue
+                          out += [f'#### `{name}`', '', '```', body[:12000], '```', '']
+              except Exception as exc:
+                  out += [f'Could not inspect archive: `{exc}`', '']
+          Path('STARTER_ARCHIVE_REPORT.md').write_text('\n'.join(out)+'\n', encoding='utf-8')
+          print('\n'.join(out[:150]))
+          PY
+      - name: Commit inspection report
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add STARTER_ARCHIVE_REPORT.md
+          if git diff --cached --quiet; then echo 'No report changes'; else git commit -m 'Add starter archive inspection report'; git push; fi
