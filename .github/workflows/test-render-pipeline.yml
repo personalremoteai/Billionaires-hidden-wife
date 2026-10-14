@@ -37,7 +37,7 @@ jobs:
           image.parent.mkdir(parents=True, exist_ok=True)
           # 9:16 solid-color PPM; the renderer only needs a valid still frame.
           w, h = 90, 160
-          image.write_text(f'P3\n{w} {h}\n255\n' + ('40 70 120\n' * (w*h)), encoding='ascii')
+          image.write_bytes(f'P6\n{w} {h}\n255\n'.encode('ascii') + bytes([40, 70, 120]) * (w*h))
           episode.write_text(json.dumps({'episode_number':70,'title':'CI render smoke test','scenes':[{'scene_number':1,'duration_seconds':2,'dialogue':[]}]}), encoding='utf-8')
           subprocess.run(['python','tools/render_episode.py','--episode','70'], check=True)
           mp4 = Path('generated/episode_070/episode_070.mp4')
