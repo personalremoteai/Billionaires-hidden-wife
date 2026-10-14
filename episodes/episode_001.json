@@ -1,0 +1,34 @@
+{
+  "episode_number": 1,
+  "title": "The Return",
+  "status": "outline",
+  "target_duration_seconds": 90,
+  "aspect_ratio": "9:16",
+  "logline": "Isabella returns to the world of Alexander Sterling with a secret that could change his family forever.",
+  "continuity_before": [],
+  "scenes": [
+    {
+      "scene_number": 1,
+      "duration_seconds": 15,
+      "location": "TBD",
+      "characters": [
+        "Isabella Hart"
+      ],
+      "action": "TBD",
+      "dialogue": [],
+      "image_prompt_file": "../../prompts/scene_image_prompt.md",
+      "motion_prompt_file": "../../prompts/image_to_video_prompt.md",
+      "voiceover_files": [],
+      "sound_cues": [],
+      "status": "needs_script"
+    }
+  ],
+  "cliffhanger": "TBD",
+  "continuity_after": [],
+  "asset_manifest": {
+    "approved_reference_images": [],
+    "scene_images": [],
+    "motion_clips": [],
+    "voiceovers": []
+  }
+}
