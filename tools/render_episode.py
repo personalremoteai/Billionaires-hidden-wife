@@ -252,6 +252,14 @@ def render_sadtalker_space(image, audio, target, duration):
     print(f"  scene {target.stem}: lip-synced with free community Space {space}")
     return target
 
+def motion_video_for(n, number):
+    """Return a user-generated image-to-video clip for this scene, if present."""
+    candidates = [
+        ROOT / "assets" / "episodes" / f"episode_{n:03d}" / "motion" / f"scene_{number:03d}.mp4",
+        ROOT / "assets" / "episodes" / f"episode_{n:03d}" / "motion" / f"scene_{number:02d}.mp4",
+    ]
+    return next((p.resolve() for p in candidates if p.is_file()), None)
+
 def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
     planned = float(scene.get("duration_seconds") or 8)
     if audio and audio.exists():
@@ -261,9 +269,26 @@ def render_scene(image, audio, scene, n, number, outdir, dry_run=False):
     duration = max(2.0, min(duration, 180.0))
     target = outdir / "scenes" / f"scene_{number:03d}.mp4"
     target.parent.mkdir(parents=True, exist_ok=True)
+    motion_clip = motion_video_for(n, number)
     if dry_run:
-        provider = "SadTalker community Space" if audio and os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker") else "FFmpeg pan/zoom"
+        provider = f"approved motion clip ({motion_clip.name})" if motion_clip else ("SadTalker community Space" if audio and os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker") else "FFmpeg pan/zoom")
         print(f"  scene {number}: image={image.name}; audio={audio.name if audio else 'silent'}; duration={duration:.1f}s; motion={provider}")
+        return target
+    if motion_clip:
+        # Loop the generated motion clip to cover the dialogue and replace its audio
+        # with the episode's script-generated voiceover when available.
+        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-stream_loop", "-1", "-i", motion_clip]
+        if audio and audio.exists():
+            cmd += ["-i", audio, "-map", "0:v:0", "-map", "1:a:0"]
+        else:
+            cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-map", "0:v:0", "-map", "1:a:0"]
+        vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p"
+        cmd += ["-vf", vf, "-t", f"{duration:.3f}", "-r", "30", "-c:v", "libx264",
+                "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
+                "-af", "apad", "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+                "-movflags", "+faststart", "-y", target]
+        run(cmd)
+        print(f"  scene {number}: used generated motion clip {motion_clip.relative_to(ROOT)}")
         return target
     if audio and os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker"):
         try:
