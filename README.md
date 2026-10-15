@@ -29,7 +29,16 @@ Use zero-padded episode and scene numbers (for example, `episode_001`, `scene_00
 4. Enter the first episode number and batch size. Start with episode `1`, count `1`.
 5. When the run finishes, open the run, scroll to **Artifacts**, and download `rendered-episodes-1-1`. Extract the ZIP to get the MP4.
 
-## Add full-body motion with Colab (experimental)\n\n- Read [the full-body motion guide](docs/full_body_animation.md).\n- Open the [LTX-Video Colab notebook](https://colab.research.google.com/github/personalremoteai/Billionaires-hidden-wife/blob/main/notebooks/colab_ltx_image_to_video.ipynb). Use one approved scene image and a GPU runtime if Colab makes one available. The notebook downloads model weights/software, not storyboard/reference images.\n- Download a reviewed clip and upload it as `assets/episodes/episode_001/motion/scene_001.mp4`, matching the scene number. Keep the approved still image too. The renderer prefers a matching motion clip and adds the scene voiceover.\n- Test one scene first: LTX-Video may generate body/camera/environment motion, but it does not guarantee lip-sync, consistent identity, or convincing two-person interactions. Free Colab GPU access is not guaranteed.\n\n## Local run (Codespaces or a computer)
+## Add full-body motion with Colab (experimental)
+
+- Open the [LTX-Video Colab notebook](https://colab.research.google.com/github/personalremoteai/Billionaires-hidden-wife/blob/main/notebooks/colab_ltx_image_to_video.ipynb). Set a GPU runtime when available; free GPU access is not guaranteed.
+- Generate a short clip from one of your **approved individual scene images** (not the full storyboard collage). The notebook downloads model weights/software only, not scene images from the web.
+- Review the result carefully for face drift, anatomy glitches, flicker and unwanted action. Upload only clips you approve to **assets/episodes/episode_001/motion/scene_001.mp4**, matching the scene number. Keep the original still image as well.
+- In GitHub Actions → **Render episode MP4s**, choose **approved_motion_clips** only when every scene in the selected episode has a readable motion MP4. A preflight step checks all clips before rendering. Choose **talking_head_lipsync** to attempt the shared SadTalker Space for scenes without supplied clips.
+- LTX-Video may create body/camera/environment motion, but it does not guarantee stable identity, lip-sync, correct hands or believable two-character interactions. Free GPU access and five-episodes-per-day throughput are not guaranteed.
+- Remotion is optional for titles/overlays/editing; it does not generate character animation. No stock or web-downloaded scene images are used.
+
+## Local run (Codespaces or a computer)
 
 Install FFmpeg, then:
 
