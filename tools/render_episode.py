@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import shutil
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -336,6 +337,7 @@ def main():
             render_episode(n, dry_run=a.dry_run)
         except Exception as exc:
             print(f"ERROR episode {n:03d}: {exc}", file=sys.stderr)
+            traceback.print_exc()
             failed.append(n)
     if failed:
         print("Failed episodes: " + ", ".join(f"{n:03d}" for n in failed), file=sys.stderr)
