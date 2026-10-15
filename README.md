@@ -29,7 +29,7 @@ Use zero-padded episode and scene numbers (for example, `episode_001`, `scene_00
 4. Enter the first episode number and batch size. Start with episode `1`, count `1`.
 5. When the run finishes, open the run, scroll to **Artifacts**, and download `rendered-episodes-1-1`. Extract the ZIP to get the MP4.
 
-## Local run (Codespaces or a computer)
+## Add full-body motion with Colab (experimental)\n\n- Read [the full-body motion guide](docs/full_body_animation.md).\n- Open the [LTX-Video Colab notebook](https://colab.research.google.com/github/personalremoteai/Billionaires-hidden-wife/blob/main/notebooks/colab_ltx_image_to_video.ipynb). Use one approved scene image and a GPU runtime if Colab makes one available. The notebook downloads model weights/software, not storyboard/reference images.\n- Download a reviewed clip and upload it as `assets/episodes/episode_001/motion/scene_001.mp4`, matching the scene number. Keep the approved still image too. The renderer prefers a matching motion clip and adds the scene voiceover.\n- Test one scene first: LTX-Video may generate body/camera/environment motion, but it does not guarantee lip-sync, consistent identity, or convincing two-person interactions. Free Colab GPU access is not guaranteed.\n\n## Local run (Codespaces or a computer)
 
 Install FFmpeg, then:
 
