@@ -180,14 +180,35 @@ def render_sadtalker_space(image, audio, target, duration):
     import urllib.request
     from gradio_client import Client, handle_file
     space = os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker")
-    api_name = os.getenv("SADTALKER_API_NAME", "/test")
+    configured = os.getenv("SADTALKER_API_NAME", "").strip()
     client = Client(space, verbose=False)
-    result = client.predict(
-        handle_file(str(image)), handle_file(str(audio)),
-        "crop", True, False, 1, 256, 0, "facevid2vid", 1.0,
-        False, None, "pose", False, max(2, int(duration)), True,
-        api_name=api_name,
-    )
+    # Community Spaces change Gradio endpoint names. Try the configured endpoint,
+    # then common SadTalker endpoint names; never silently turn failure into a still.
+    api_names = [configured] if configured else []
+    api_names += [name for name in ("/generate", "/gen_video", "/predict", "/run", "/test") if name not in api_names]
+    result = None
+    endpoint_errors = []
+    for api_name in api_names:
+        try:
+            result = client.predict(
+                handle_file(str(image)), handle_file(str(audio)),
+                "crop", True, False, 1, 256, 0, "facevid2vid", 1.0,
+                False, None, "pose", False, max(2, int(duration)), True,
+                api_name=api_name,
+            )
+            print(f"  SadTalker endpoint accepted: {api_name}")
+            break
+        except Exception as exc:
+            endpoint_errors.append(f"{api_name}: {exc}")
+    if result is None:
+        try:
+            api_info = client.view_api(return_format="dict")
+        except Exception as exc:
+            api_info = {"inspection_error": str(exc)}
+        raise RuntimeError(
+            "No known SadTalker endpoint accepted the request. "
+            f"Attempts: {' | '.join(endpoint_errors)}. API schema: {api_info}"
+        )
     if isinstance(result, (list, tuple)):
         result = next((v for v in result if isinstance(v, (str, dict)) and v), None)
     if isinstance(result, dict):
