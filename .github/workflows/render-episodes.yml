@@ -6,10 +6,20 @@ on:
         description: First episode number (1–70)
         required: true
         default: '1'
+        type: string
       count:
         description: Number of episodes to render; start with 1
         required: true
         default: '1'
+        type: string
+      animation_mode:
+        description: Choose approved full-scene motion clips or the talking-head provider
+        required: true
+        type: choice
+        options:
+          - talking_head_lipsync
+          - approved_motion_clips
+        default: talking_head_lipsync
 permissions:
   contents: read
 jobs:
@@ -25,11 +35,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install rendering dependencies
         run: python -m pip install -r requirements-video.txt
+      - name: Validate approved motion clips
+        if: ${{ inputs.animation_mode == 'approved_motion_clips' }}
+        run: python tools/validate_motion_assets.py --start '${{ inputs.start }}' --count '${{ inputs.count }}'
       - name: Render selected episodes
         env:
           SADTALKER_SPACE: kevinwang676/SadTalker
           SADTALKER_API_NAME: ''
-          REQUIRE_LIPSYNC: '1'
+          REQUIRE_LIPSYNC: ${{ inputs.animation_mode == 'talking_head_lipsync' && '1' || '0' }}
           VOICE_MAP_JSON: ${{ vars.VOICE_MAP_JSON }}
         run: python tools/render_episode.py --start '${{ inputs.start }}' --count '${{ inputs.count }}'
       - name: Upload MP4s and voiceovers
