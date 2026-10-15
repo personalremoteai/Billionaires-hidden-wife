@@ -180,35 +180,44 @@ def render_sadtalker_space(image, audio, target, duration):
     import urllib.request
     from gradio_client import Client, handle_file
     space = os.getenv("SADTALKER_SPACE", "kevinwang676/SadTalker")
-    configured = os.getenv("SADTALKER_API_NAME", "").strip()
     client = Client(space, verbose=False)
-    # Community Spaces change Gradio endpoint names. Try the configured endpoint,
-    # then common SadTalker endpoint names; never silently turn failure into a still.
-    api_names = [configured] if configured else []
-    api_names += [name for name in ("/generate", "/gen_video", "/predict", "/run", "/test") if name not in api_names]
-    result = None
-    endpoint_errors = []
-    for api_name in api_names:
-        try:
-            result = client.predict(
-                handle_file(str(image)), handle_file(str(audio)),
-                "crop", True, False, 1, 256, 0, "facevid2vid", 1.0,
-                False, None, "pose", False, max(2, int(duration)), True,
-                api_name=api_name,
-            )
-            print(f"  SadTalker endpoint accepted: {api_name}")
-            break
-        except Exception as exc:
-            endpoint_errors.append(f"{api_name}: {exc}")
-    if result is None:
-        try:
-            api_info = client.view_api(return_format="dict")
-        except Exception as exc:
-            api_info = {"inspection_error": str(exc)}
-        raise RuntimeError(
-            "No known SadTalker endpoint accepted the request. "
-            f"Attempts: {' | '.join(endpoint_errors)}. API schema: {api_info}"
+    # The current community Space exposes one unnamed endpoint (fn_index=0),
+    # with eight inputs. Inspect the API and use the documented unnamed endpoint.
+    # Older Space versions may expose named endpoints, so try those only if needed.
+    api_info = client.view_api(return_format="dict")
+    unnamed = api_info.get("unnamed_endpoints", {})
+    if "0" in unnamed:
+        result = client.predict(
+            handle_file(str(image)), handle_file(str(audio)),
+            "crop", True, False, 1, "256", 0,
+            fn_index=0,
         )
+        print("  SadTalker endpoint accepted: unnamed fn_index=0")
+    else:
+        configured = os.getenv("SADTALKER_API_NAME", "").strip()
+        named = api_info.get("named_endpoints", {})
+        candidates = [configured] if configured else []
+        candidates += [name for name in ("/generate", "/gen_video", "/predict", "/run", "/test") if name not in candidates]
+        result = None
+        errors = []
+        for api_name in candidates:
+            if api_name not in named:
+                continue
+            try:
+                result = client.predict(
+                    handle_file(str(image)), handle_file(str(audio)),
+                    "crop", True, False, 1, "256", 0,
+                    api_name=api_name,
+                )
+                print(f"  SadTalker endpoint accepted: {api_name}")
+                break
+            except Exception as exc:
+                errors.append(f"{api_name}: {exc}")
+        if result is None:
+            raise RuntimeError(
+                "No compatible SadTalker endpoint found. "
+                f"Named endpoints: {list(named.keys())}; errors: {errors}"
+            )
     if isinstance(result, (list, tuple)):
         result = next((v for v in result if isinstance(v, (str, dict)) and v), None)
     if isinstance(result, dict):
