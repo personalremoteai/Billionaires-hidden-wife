@@ -28,8 +28,8 @@ jobs:
       - name: Render selected episodes
         env:
           SADTALKER_SPACE: kevinwang676/SadTalker
-          SADTALKER_API_NAME: /test
-          REQUIRE_LIPSYNC: '0'
+          SADTALKER_API_NAME: ''
+          REQUIRE_LIPSYNC: '1'
           VOICE_MAP_JSON: ${{ vars.VOICE_MAP_JSON }}
         run: python tools/render_episode.py --start '${{ inputs.start }}' --count '${{ inputs.count }}'
       - name: Upload MP4s and voiceovers
